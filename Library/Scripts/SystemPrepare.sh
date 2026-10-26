@@ -41,8 +41,21 @@ is_ghostbsd() {
     return 1
 }
 
+is_nextbsd() {
+    [ "$(uname -s)" = "NextBSD" ] && return 0
+    [ -f /etc/os-release ] && grep -q '^ID=nextbsd' /etc/os-release 2>/dev/null
+}
+
 verify_platform() {
     get_os_like
+    # NextBSD says ID_LIKE=freebsd, but it is not prepared like FreeBSD: its
+    # requirements are NextBSD packages (gershwin-developer's nextbsd.txt),
+    # launchd runs no rc.d scripts, and it ships no D-Bus. Stop before this
+    # script configures FreeBSD's package repository and installs Xorg and dbus.
+    if is_nextbsd; then
+        log "NextBSD detected: nothing to prepare here. Gershwin's requirements are NextBSD packages, installed by gershwin-developer's bootstrap.sh"
+        exit 1
+    fi
     if is_freebsd || is_debian_like; then
         log "Detected platform: ${OS_LIKE:-$(uname -s)}"
     else
