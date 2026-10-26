@@ -15,6 +15,13 @@ export DISPLAY="${DISPLAY:-:0}"
 
 export PATH=$HOME/Library/Tools:/Local/Library/Tools:/System/Library/Tools/:$PATH
 
+# NextBSD ships X and its tools (xset, setxkbmap, xinput, xrandr, ...) in its
+# base system, in /usr/X11/bin, which is not on a launchd job's PATH. Other
+# systems have no /usr/X11/bin, so nothing changes for them.
+if [ -d /usr/X11/bin ]; then
+  case ":$PATH:" in *:/usr/X11/bin:*) ;; *) export PATH="$PATH:/usr/X11/bin" ;; esac
+fi
+
 # Add our fonts path to fontconfig
 export FONTCONFIG_PATH=/System/Library/Preferences
 export FONTCONFIG_FILE=$FONTCONFIG_PATH/fonts.conf
@@ -55,11 +62,13 @@ if which devmon >/dev/null 2>&1; then
   (devmon &)
 fi
 
-# D-Bus is required by Menu; only set up a session bus if none is there and
-# Menu is on the $PATH.  gershwin-session inherits this environment for all
+# Menu uses a D-Bus session bus for programs that export their menus over
+# D-Bus (and for MPRIS), so set one up if none is there, Menu is on the $PATH
+# and D-Bus is installed. Systems without D-Bus (NextBSD ships none) skip it;
+# Menu then works without a bus.  gershwin-session inherits this environment for all
 # supervised apps.
 if which Menu >/dev/null 2>&1; then
-  if [ -z "$DBUS_SESSION_BUS_ADDRESS" ] ; then
+  if [ -z "$DBUS_SESSION_BUS_ADDRESS" ] && command -v dbus-launch >/dev/null 2>&1; then
     export $(dbus-launch)
   fi
   # Make GTK 2/3/4 and Qt 5/6 applications show their menus in Menu, through the

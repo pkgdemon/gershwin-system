@@ -19,6 +19,13 @@
 
 export DISPLAY=:0
 
+# NextBSD ships X and its tools (xset, setxkbmap, xinput, xrandr, ...) in its
+# base system, in /usr/X11/bin, which is not on a launchd job's PATH. Other
+# systems have no /usr/X11/bin, so nothing changes for them.
+if [ -d /usr/X11/bin ]; then
+  case ":$PATH:" in *:/usr/X11/bin:*) ;; *) export PATH="$PATH:/usr/X11/bin" ;; esac
+fi
+
 # Allow non-root users to power off, halt, and reboot the system
 for bin in /sbin/poweroff /sbin/halt /sbin/reboot; do [ -e "$bin" ] && chmod 5755 "$bin"; done
 
